@@ -1,0 +1,46 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: UI CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.17]
+
+    defaults:
+      run:
+       working-directory: ./BackBase-webUI-task
+        
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    - run: npm install
+    - name: 'Create env file'
+      env:
+        BASIC_AUTH_USERNAME: ${{ secrets.BASIC_AUTH_USERNAME }}
+        BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD }}
+        USER_EMAIL: ${{ secrets.USER_EMAIL }}
+        USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+      run: |
+        touch .env
+        echo BASIC_AUTH_USERNAME="${BASIC_AUTH_USERNAME}" >> .env
+        echo BASIC_AUTH_PASSWORD="${BASIC_AUTH_PASSWORD}" >> .env
+        echo USER_EMAIL="${USER_EMAIL}" >> .env
+        echo USER_PASSWORD="${USER_PASSWORD}" >> .env
+    - run: npm run test-chrome-headless
